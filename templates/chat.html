@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Concierge — {{ restaurant }}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#C9A84C;--gold-dim:#8A6B28;
+  --ink:#0D0D0D;--ink2:#2A2A2A;--ink3:#555;--ink4:#888;
+  --cream:#FDFAF4;--cream2:#F5F0E8;--white:#fff;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.06);
+  --green:#1A7A4A;--green-bg:#DCFCE7;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);display:flex;flex-direction:column;min-height:100vh}
+header{background:var(--ink2);padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'DM Serif Display',serif;font-size:20px;color:var(--gold)}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.back-btn{padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.6);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.back-btn:hover{border-color:var(--gold);color:var(--gold)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:var(--green-bg);color:#15803d}
+
+.chat-container{max-width:700px;width:100%;margin:0 auto;padding:28px 20px;flex:1;display:flex;flex-direction:column}
+.chat-intro{text-align:center;margin-bottom:28px}
+.chat-intro h1{font-family:'DM Serif Display',serif;font-size:26px;color:var(--ink);margin-bottom:8px}
+.chat-intro p{font-size:14px;color:var(--ink4);line-height:1.6;max-width:440px;margin:0 auto}
+
+.chat-box{background:var(--white);border-radius:16px;border:1px solid var(--border2);overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:480px}
+.chat-hd{background:var(--ink2);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.ai-avatar{width:34px;height:34px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;margin-right:10px;flex-shrink:0}
+.ai-name{font-size:13px;font-weight:600;color:#fff}
+.ai-sub{font-size:11px;color:rgba(255,255,255,.35)}
+
+.messages{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px;background:var(--cream)}
+.msg{max-width:78%;padding:11px 15px;border-radius:14px;font-size:14px;line-height:1.55;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.msg.ai{align-self:flex-start;background:var(--white);color:var(--ink2);border:1px solid var(--border2);border-radius:14px 14px 14px 2px}
+.msg.user{align-self:flex-end;background:var(--gold);color:#fff;border-radius:14px 14px 2px 14px}
+.msg-label{font-size:10px;color:#aaa;margin-bottom:5px;font-weight:500;letter-spacing:.5px}
+.booking-confirm{background:var(--green-bg);border:1px solid #86EFAC;border-radius:10px;padding:10px 14px;margin-top:8px;font-size:12px;color:#15803d;font-weight:500}
+
+.typing .dots{display:inline-flex;gap:5px;align-items:center;height:18px}
+.dot{width:6px;height:6px;background:#aaa;border-radius:50%;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+
+.quick-bar{display:flex;gap:7px;padding:10px 18px;flex-wrap:wrap;border-top:1px solid var(--border2);background:var(--cream)}
+.qr{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:12px;color:var(--ink3);cursor:pointer;transition:all .15s;white-space:nowrap}
+.qr:hover{border-color:var(--gold);color:var(--gold)}
+
+.input-bar{display:flex;gap:10px;padding:14px 18px;border-top:1px solid var(--border2);background:var(--white)}
+.input-bar input{flex:1;padding:10px 16px;border:1.5px solid var(--border);border-radius:24px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;background:var(--cream);color:var(--ink);transition:border-color .15s}
+.input-bar input:focus{border-color:var(--gold)}
+.send-btn{width:40px;height:40px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;font-size:16px;color:#fff;flex-shrink:0;transition:background .15s;display:flex;align-items:center;justify-content:center}
+.send-btn:hover{background:var(--gold-dim)}
+.send-btn:disabled{background:#ccc;cursor:not-allowed}
+
+.dash-link{display:block;text-align:center;margin-top:18px;font-size:13px;color:var(--ink4)}
+.dash-link a{color:var(--gold);text-decoration:none;font-weight:500}
+.dash-link a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo">TableFlow AI</div>
+    <div class="logo-sub">Booking Concierge</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="badge">● Claude AI Active</span>
+    <a href="/" class="back-btn">← Dashboard</a>
+  </div>
+</header>
+
+<div class="chat-container">
+  <div class="chat-intro">
+    <h1>AI Booking Concierge</h1>
+    <p>Chat naturally to make a reservation at {{ restaurant }}. I can handle bookings, answer questions, and manage special requests 24/7.</p>
+  </div>
+
+  <div class="chat-box">
+    <div class="chat-hd">
+      <div style="display:flex;align-items:center">
+        <div class="ai-avatar">🤖</div>
+        <div>
+          <div class="ai-name">TableFlow AI</div>
+          <div class="ai-sub">Powered by Claude · Always on</div>
+        </div>
+      </div>
+      <span class="badge" style="font-size:10px">● Online</span>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg ai">
+        <div class="msg-label">TABLEFLOW AI</div>
+        Good evening! I'm the AI concierge for {{ restaurant }}. I can take reservations, check availability, and handle any special requests. How can I help you today?
+      </div>
+    </div>
+
+    <div class="quick-bar">
+      <span class="qr" onclick="sendQuick('Book a table for 2 tonight at 7pm')">Table for 2 tonight</span>
+      <span class="qr" onclick="sendQuick('Do you have availability this Saturday evening?')">Saturday availability</span>
+      <span class="qr" onclick="sendQuick('I need a table for a birthday party of 8')">Birthday party</span>
+      <span class="qr" onclick="sendQuick('What are your opening hours?')">Opening hours</span>
+    </div>
+
+    <div class="input-bar">
+      <input id="user-input" type="text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()" autofocus>
+      <button class="send-btn" id="send-btn" onclick="sendMsg()">➤</button>
+    </div>
+  </div>
+
+  <div class="dash-link">Manage all reservations on your <a href="/">dashboard →</a></div>
+</div>
+
+<script>
+let history = [];
+
+function addMsg(text, role, typing=false, bookingData=null){
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role + (typing ? ' typing' : '');
+  if(role === 'ai'){
+    const lbl = document.createElement('div');
+    lbl.className = 'msg-label'; lbl.textContent = 'TABLEFLOW AI';
+    div.appendChild(lbl);
+  }
+  if(typing){
+    div.innerHTML += '<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
+  } else {
+    const p = document.createElement('p'); p.textContent = text; div.appendChild(p);
+    if(bookingData){
+      const confirm = document.createElement('div');
+      confirm.className = 'booking-confirm';
+      confirm.textContent = `✓ Booking confirmed — ${bookingData.name || 'Guest'}, ${bookingData.guests || 2} covers, ${bookingData.time || 'Tonight'}`;
+      div.appendChild(confirm);
+    }
+  }
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div;
+}
+
+function sendQuick(msg){
+  document.getElementById('user-input').value = msg;
+  sendMsg();
+}
+
+async function sendMsg(){
+  const input = document.getElementById('user-input');
+  const btn   = document.getElementById('send-btn');
+  const msg   = input.value.trim();
+  if(!msg) return;
+  input.value = ''; btn.disabled = true;
+
+  addMsg(msg, 'user');
+  history.push({role: 'user', content: msg});
+  const typing = addMsg('', 'ai', true);
+
+  try{
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({messages: history})
+    });
+    const data = await res.json();
+    typing.remove();
+
+    const reply = data.reply || "I'm having trouble right now. Please try again.";
+    history.push({role: 'assistant', content: reply});
+    addMsg(reply, 'ai', false, data.booking_created || null);
+  } catch(e){
+    typing.remove();
+    addMsg("Connection error — please try again.", 'ai');
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+</script>
+</body>
+</html>
