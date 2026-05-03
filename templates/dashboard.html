@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TableFlow AI — {{ restaurant }}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold:#C9A84C;--gold-light:#F5E6BE;--gold-dim:#8A6B28;--gold-bg:rgba(201,168,76,.08);
+  --ink:#0D0D0D;--ink2:#2A2A2A;--ink3:#555;--ink4:#888;--ink5:#bbb;
+  --cream:#FDFAF4;--cream2:#F5F0E8;--cream3:#EDE5D5;
+  --white:#FFFFFF;
+  --red:#C0392B;--red-bg:#FEF2F2;--red-light:#FECACA;
+  --green:#1A7A4A;--green-bg:#DCFCE7;
+  --blue:#1A5276;--blue-bg:#EFF6FF;
+  --amber:#D97706;--amber-bg:#FEF3C7;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.06);
+  --r:10px;--r-lg:14px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;overflow-x:hidden}
+
+/* LAYOUT */
+.app{display:flex;height:100vh}
+.sidebar{width:230px;background:var(--ink2);display:flex;flex-direction:column;flex-shrink:0;z-index:10}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.content{flex:1;overflow-y:auto;padding:28px 32px;background:var(--cream)}
+
+/* SIDEBAR */
+.logo{padding:26px 22px 22px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.logo-name{font-family:'DM Serif Display',serif;font-size:21px;color:var(--gold);letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase;margin-top:3px}
+.nav{flex:1;padding:14px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 22px;font-size:13px;color:rgba(255,255,255,.45);cursor:pointer;transition:all .15s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.05)}
+.nav-item.active{color:var(--gold);background:rgba(201,168,76,.1);border-left-color:var(--gold)}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-footer{padding:18px 22px;border-top:1px solid rgba(255,255,255,.08)}
+.plan-badge{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:#fff;font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;letter-spacing:.5px;display:inline-block}
+.s-avatar{width:32px;height:32px;border-radius:50%;background:rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--gold);flex-shrink:0}
+
+/* TOPBAR */
+.topbar{background:var(--white);border-bottom:1px solid var(--border2);padding:0 32px;height:62px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:600;color:var(--ink)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.notif-btn{width:34px;height:34px;border-radius:50%;background:var(--cream2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;font-size:14px}
+.notif-dot{position:absolute;top:7px;right:7px;width:7px;height:7px;background:var(--red);border-radius:50%;border:1.5px solid white}
+.t-avatar{width:34px;height:34px;border-radius:50%;background:var(--gold-light);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--gold-dim)}
+
+/* VIEWS */
+.view{display:none}.view.active{display:block}
+
+/* CARDS */
+.card{background:var(--white);border-radius:var(--r);border:1px solid var(--border2);overflow:hidden}
+.card-hd{padding:16px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:var(--ink)}
+.card-body{padding:20px}
+
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat{background:var(--white);border-radius:var(--r);padding:20px;border:1px solid var(--border2)}
+.stat-lbl{font-size:11px;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:700;color:var(--ink);line-height:1}
+.stat-sub{font-size:12px;color:var(--green);margin-top:6px}
+.stat-sub.down{color:var(--red)}
+
+/* BUTTONS */
+.btn{padding:8px 16px;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:6px}
+.btn-gold{background:var(--gold);color:#fff}.btn-gold:hover{background:var(--gold-dim)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--ink3)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+.btn-ghost{background:transparent;color:var(--ink4);padding:5px 10px}.btn-ghost:hover{color:var(--ink);background:var(--cream2)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid var(--red-light)}.btn-danger:hover{background:#fee2e2}
+.btn-sm{padding:5px 11px;font-size:12px}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.b-green{background:var(--green-bg);color:#15803d}
+.b-red{background:var(--red-bg);color:#dc2626}
+.b-amber{background:var(--amber-bg);color:#b45309}
+.b-blue{background:var(--blue-bg);color:#1d4ed8}
+.b-gray{background:#f1f5f9;color:#64748b}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 16px;font-size:11px;color:var(--ink4);font-weight:500;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border2);background:var(--cream2);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--border2);color:var(--ink2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--cream)}
+.g-avatar{width:28px;height:28px;border-radius:50%;background:var(--cream3);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--gold-dim);margin-right:8px;vertical-align:middle;flex-shrink:0}
+
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+label{font-size:12px;font-weight:500;color:var(--ink3)}
+input,select,textarea{padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--ink);background:var(--cream);outline:none;transition:border-color .15s;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--gold)}
+textarea{resize:vertical;min-height:70px}
+
+/* LAYOUT HELPERS */
+.grid-2{display:grid;grid-template-columns:1fr 380px;gap:20px;margin-bottom:20px}
+.section-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.section-title{font-size:18px;font-weight:600;color:var(--ink)}
+.filter-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.chip{padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:12px;color:var(--ink3);cursor:pointer;transition:all .15s}
+.chip.active{background:var(--gold);color:#fff;border-color:var(--gold)}
+.mb-20{margin-bottom:20px}
+
+/* CHART BAR */
+.mini-chart{display:flex;align-items:flex-end;gap:4px;height:64px}
+.bar{flex:1;background:var(--gold-light);border-radius:3px 3px 0 0;min-width:8px;cursor:pointer;transition:background .15s}
+.bar:hover,.bar.today{background:var(--gold)}
+.chart-labels{display:flex;justify-content:space-between;margin-top:4px}
+.chart-labels span{font-size:10px;color:var(--ink4)}
+
+/* ACTIVITY FEED */
+.tl-item{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border2)}
+.tl-item:last-child{border-bottom:none}
+.tl-icon{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
+.tl-time{font-size:11px;color:var(--ink5);margin-left:auto;white-space:nowrap;padding-top:2px}
+.tl-text{font-size:13px;color:var(--ink2)}
+.tl-sub{font-size:11px;color:var(--ink4);margin-top:1px}
+
+/* CHAT */
+.chat-wrap{display:flex;flex-direction:column;height:460px}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--cream)}
+.msg{max-width:82%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.55}
+.msg.user{align-self:flex-end;background:var(--gold);color:#fff;border-radius:12px 12px 2px 12px}
+.msg.ai{align-self:flex-start;background:var(--white);color:var(--ink2);border:1px solid var(--border2);border-radius:12px 12px 12px 2px}
+.msg-lbl{font-size:10px;color:var(--ink5);margin-bottom:4px;font-weight:500;letter-spacing:.5px}
+.dots{display:inline-flex;gap:4px;align-items:center;height:16px}
+.dot{width:5px;height:5px;background:var(--ink4);border-radius:50%;animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-5px)}}
+.quick-replies{display:flex;gap:6px;padding:8px 16px 4px;flex-wrap:wrap;border-top:1px solid var(--border2);background:var(--cream)}
+.qr{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--white);font-size:12px;color:var(--ink3);cursor:pointer;transition:all .15s}
+.qr:hover{border-color:var(--gold);color:var(--gold)}
+.chat-input-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--border2);background:var(--white)}
+.chat-input-row input{flex:1;border-radius:20px;padding:9px 16px}
+.send-btn{width:36px;height:36px;border-radius:50%;background:var(--gold);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;flex-shrink:0;transition:background .15s}
+.send-btn:hover{background:var(--gold-dim)}
+
+/* MISSED CALL BANNER */
+.mc-banner{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:var(--r);padding:22px 28px;margin-bottom:22px;display:flex;align-items:center;justify-content:space-between}
+.mc-icon{font-size:30px;margin-right:14px}
+.mc-title{font-size:14px;font-weight:600;color:#fff;margin-bottom:3px}
+.mc-sub{font-size:12px;color:rgba(255,255,255,.45)}
+.pulse{width:10px;height:10px;background:var(--gold);border-radius:50%;animation:pulse 1.5s infinite;margin-right:8px}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(201,168,76,.7)}70%{box-shadow:0 0 0 8px rgba(201,168,76,0)}100%{box-shadow:0 0 0 0 rgba(201,168,76,0)}}
+
+/* SETTINGS */
+.settings-section{margin-bottom:28px}
+.settings-lbl{font-size:11px;font-weight:600;color:var(--ink4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border2)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border2)}
+.setting-row:last-child{border-bottom:none}
+.setting-info .setting-label{font-size:13px;font-weight:500;color:var(--ink)}
+.setting-info .setting-hint{font-size:12px;color:var(--ink4);margin-top:2px}
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.t-slider{position:absolute;top:0;left:0;right:0;bottom:0;background:#CBD5E1;border-radius:22px;transition:.3s;cursor:pointer}
+.t-slider:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle input:checked+.t-slider{background:var(--gold)}
+.toggle input:checked+.t-slider:before{transform:translateX(18px)}
+
+/* PRICING */
+.plan-card{border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative}
+.plan-card.featured{border-color:var(--gold);border-width:2px}
+.plan-popular{position:absolute;top:-11px;right:18px;background:var(--gold);color:#fff;font-size:10px;padding:3px 10px;border-radius:10px;font-weight:600;letter-spacing:.3px}
+.plan-name{font-size:12px;font-weight:600;color:var(--ink4);letter-spacing:.8px}
+.plan-card.featured .plan-name{color:var(--gold)}
+.plan-price{font-size:30px;font-weight:700;color:var(--ink);margin:8px 0 3px}
+.plan-price span{font-size:14px;font-weight:400;color:var(--ink4)}
+.plan-desc{font-size:12px;color:var(--ink4);margin-bottom:14px}
+.plan-features{list-style:none;margin-top:12px}
+.plan-features li{font-size:13px;color:var(--ink3);padding:5px 0;display:flex;align-items:center;gap:8px}
+.plan-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:12px;flex-shrink:0}
+
+/* PROGRESS */
+.progress-bar{height:6px;background:var(--cream3);border-radius:3px;margin-top:6px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gold);border-radius:3px}
+
+/* INSIGHT CARD */
+.insight{padding:12px;background:var(--cream);border-radius:8px;margin-bottom:8px}
+.insight:last-child{margin-bottom:0}
+.insight-lbl{font-size:11px;font-weight:600;margin-bottom:4px}
+.insight-text{font-size:12px;color:var(--ink3)}
+
+/* ANIMATIONS */
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .3s ease}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink2);color:#fff;padding:12px 18px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast-green{border-left:3px solid var(--gold)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-name">TableFlow AI</div>
+    <div class="logo-sub">Restaurant OS</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">⬛</span>Dashboard</div>
+    <div class="nav-item" onclick="nav('bookings',this)"><span class="nav-icon">📋</span>Bookings</div>
+    <div class="nav-item" onclick="nav('aichat',this)"><span class="nav-icon">💬</span>AI Concierge</div>
+    <div class="nav-item" onclick="nav('missed',this)"><span class="nav-icon">📞</span>Missed Calls</div>
+    <div class="nav-item" onclick="nav('analytics',this)"><span class="nav-icon">📊</span>Analytics</div>
+    <div class="nav-item" onclick="nav('settings',this)"><span class="nav-icon">⚙️</span>Settings</div>
+    <div class="nav-item" onclick="nav('pricing',this)"><span class="nav-icon">💎</span>Upgrade</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div class="s-avatar">TG</div>
+      <div>
+        <div style="font-size:12px;color:rgba(255,255,255,.8);font-weight:500">{{ restaurant }}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.3)">admin@restaurant.co</div>
+      </div>
+    </div>
+    <span class="plan-badge">STARTER</span>
+    <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:5px">3 of 5 channels active</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard Overview</div>
+    <div class="topbar-right">
+      <div class="notif-btn"><span>🔔</span><div class="notif-dot"></div></div>
+      <div class="t-avatar">TG</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ── DASHBOARD ─────────────────────────────────────────── -->
+  <div class="view active" id="view-dashboard">
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-lbl">Total Bookings</div>
+        <div class="stat-val">{{ stats.total_bookings }}</div>
+        <div class="stat-sub">↑ Live count</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Missed Recovered</div>
+        <div class="stat-val">{{ stats.missed_recovered }}</div>
+        <div class="stat-sub">↑ Via AI capture</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Est. Revenue</div>
+        <div class="stat-val">£{{ "{:,}".format(stats.estimated_revenue) }}</div>
+        <div class="stat-sub">↑ £28/cover avg</div>
+      </div>
+      <div class="stat">
+        <div class="stat-lbl">Missed Revenue Saved</div>
+        <div class="stat-val">£{{ "{:,}".format(stats.missed_revenue) }}</div>
+        <div class="stat-sub">↑ £56/recovery avg</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">Today's Reservations</span>
+          <button class="btn btn-gold btn-sm" onclick="nav('bookings',null);openForm()">+ Add Booking</button>
+        </div>
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr><th>Guest</th><th>Time</th><th>Covers</th><th>Source</th><th>Status</th></tr></thead>
+            <tbody>
+            {% if bookings %}
+              {% for b in bookings[:8] %}
+              <tr>
+                <td><div style="display:flex;align-items:center">
+                  <div class="g-avatar">{{ b['name'][:2].upper() }}</div>
+                  <span style="font-weight:500">{{ b['name'] }}</span>
+                </div></td>
+                <td style="font-size:12px;color:var(--ink4)">{{ b['time'] }}</td>
+                <td style="text-align:center">{{ b['guests'] }}</td>
+                <td>
+                  {% set src = b['source'] %}
+                  <span class="badge {% if src=='AI Chat' %}b-green{% elif src=='Missed Call' %}b-red{% elif src=='Phone' %}b-blue{% elif src=='Online' %}b-blue{% else %}b-amber{% endif %}" style="font-size:11px">{{ src }}</span>
+                </td>
+                <td><span class="badge b-green" style="font-size:11px">{{ b['status']|title }}</span></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="5" style="text-align:center;color:var(--ink4);padding:28px;font-size:13px">No bookings yet — add one to get started</td></tr>
+            {% endif %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Weekly Overview</span></div>
+          <div class="card-body">
+            <div class="mini-chart" id="mini-chart"></div>
+            <div class="chart-labels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Today</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Live Activity</span></div>
+          <div class="card-body" style="padding:12px 16px">
+            <div id="activity-feed">
+              <div class="tl-item">
+                <div class="tl-icon" style="background:var(--green-bg)">✅</div>
+                <div><div class="tl-text">System ready</div><div class="tl-sub">{{ stats.total_bookings }} bookings loaded</div></div>
+                <div class="tl-time">now</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOOKINGS ────────────────────────────────────────────── -->
+  <div class="view" id="view-bookings">
+    <div class="section-hd">
+      <span class="section-title">All Bookings</span>
+      <button class="btn btn-gold" onclick="openForm()">+ New Booking</button>
+    </div>
+
+    <div id="add-form-wrap" style="display:none" class="mb-20">
+      <div class="card">
+        <div class="card-hd">
+          <span class="card-title">New Reservation</span>
+          <button class="btn btn-ghost" onclick="closeForm()">✕</button>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>Guest Name *</label><input id="f-name" placeholder="e.g. Sarah Mitchell"></div>
+            <div class="field"><label>Phone</label><input id="f-phone" placeholder="e.g. 07700 900000"></div>
+            <div class="field"><label>Date & Time</label><input id="f-time" type="datetime-local"></div>
+            <div class="field"><label>Covers</label><input id="f-guests" type="number" placeholder="2" min="1" max="30" value="2"></div>
+            <div class="field"><label>Source</label>
+              <select id="f-source">
+                <option>Walk-in</option><option>Phone</option><option>Online</option>
+                <option>AI Chat</option><option>WhatsApp</option><option>Email</option>
+              </select>
+            </div>
+            <div class="field"><label>Notes</label><input id="f-notes" placeholder="Allergies, occasion, seating preference..."></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:18px">
+            <button class="btn btn-gold" onclick="submitBooking()">Confirm Booking</button>
+            <button class="btn btn-outline" onclick="closeForm()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <span class="chip active" onclick="filterChip('all',this)">All</span>
+      <span class="chip" onclick="filterChip('confirmed',this)">Confirmed</span>
+      <span class="chip" onclick="filterChip('pending',this)">Pending</span>
+      <span class="chip" onclick="filterChip('Missed Call',this)">Missed Call</span>
+      <span class="chip" onclick="filterChip('AI Chat',this)">AI Booked</span>
+    </div>
+
+    <div class="card">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Guest</th><th>Phone</th><th>Date & Time</th><th>Covers</th><th>Source</th><th>Notes</th><th>Status</th><th></th></tr></thead>
+          <tbody id="bookings-tbody">
+            {% if bookings %}
+              {% for b in bookings %}
+              <tr data-source="{{ b['source'] }}" data-status="{{ b['status'] }}" data-id="{{ b['id'] }}">
+                <td><div style="display:flex;align-items:center">
+                  <div class="g-avatar">{{ b['name'][:2].upper() }}</div>
+                  <span style="font-weight:500">{{ b['name'] }}</span>
+                </div></td>
+                <td style="font-size:12px;color:var(--ink4)">{{ b['phone'] }}</td>
+                <td style="font-size:13px">{{ b['time'] }}</td>
+                <td style="text-align:center">{{ b['guests'] }}</td>
+                <td>
+                  {% set src = b['source'] %}
+                  <span class="badge {% if src=='AI Chat' %}b-green{% elif src=='Missed Call' %}b-red{% elif src=='Phone' or src=='Online' %}b-blue{% else %}b-amber{% endif %}" style="font-size:11px">{{ src }}</span>
+                </td>
+                <td style="font-size:12px;color:var(--ink4)">{{ b['notes'] or '—' }}</td>
+                <td><span class="badge {% if b['status']=='confirmed' %}b-green{% else %}b-amber{% endif %}" style="font-size:11px">{{ b['status']|title }}</span></td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteBooking({{ b['id'] }}, this)">Cancel</button></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="8" style="text-align:center;color:var(--ink4);padding:32px">No bookings yet</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AI CONCIERGE ──────────────────────────────────────── -->
+  <div class="view" id="view-aichat">
+    <div class="section-hd">
+      <span class="section-title">AI Booking Concierge</span>
+      <span class="badge b-green">● Claude AI Active</span>
+    </div>
+    <div class="grid-2">
+      <div class="card" style="overflow:hidden">
+        <div class="card-hd" style="background:var(--ink2)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:14px">🤖</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#fff">TableFlow AI</div>
+              <div style="font-size:11px;color:rgba(255,255,255,.35)">Powered by Claude · Always on</div>
+            </div>
+          </div>
+          <span class="badge b-green" style="font-size:10px">● Online</span>
+        </div>
+        <div class="chat-wrap">
+          <div class="chat-msgs" id="chat-msgs">
+            <div class="msg ai">
+              <div class="msg-lbl">TABLEFLOW AI</div>
+              Good evening! I'm your AI booking concierge for {{ restaurant }}. I can take reservations, check availability, and handle special requests. How can I help?
+            </div>
+          </div>
+          <div class="quick-replies">
+            <span class="qr" onclick="sendQuick('Book a table for 2 tonight at 7pm')">Table for 2, tonight</span>
+            <span class="qr" onclick="sendQuick('What times are available this Saturday?')">Saturday availability</span>
+            <span class="qr" onclick="sendQuick('I need a table for a birthday party of 8')">Birthday party of 8</span>
+          </div>
+          <div class="chat-input-row">
+            <input id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="send-btn" onclick="sendChat()">➤</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-hd"><span class="card-title">AI Performance</span></div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div style="text-align:center;padding:12px;background:var(--cream);border-radius:8px">
+                <div style="font-size:22px;font-weight:700;color:var(--gold)" id="ai-count">{{ bookings|selectattr('source','equalto','AI Chat')|list|length }}</div>
+                <div style="font-size:11px;color:var(--ink4);margin-top:2px">AI Bookings</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:var(--cream);border-radius:8px">
+                <div style="font-size:22px;font-weight:700;color:var(--green)">98%</div>
+                <div style="font-size:11px;color:var(--ink4);margin-top:2px">Resolution Rate</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:var(--cream);border-radius:8px">
+                <div style="font-size:22px;font-weight:700;color:var(--blue)">1.2s</div>
+                <div style="font-size:11px;color:var(--ink4);margin-top:2px">Avg Response</div>
+              </div>
+              <div style="text-align:center;padding:12px;background:var(--cream);border-radius:8px">
+                <div style="font-size:22px;font-weight:700;color:var(--ink)">24/7</div>
+                <div style="font-size:11px;color:var(--ink4);margin-top:2px">Availability</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd"><span class="card-title">Active Channels</span></div>
+          <div class="card-body" style="padding:10px 16px">
+            <div class="setting-row" style="padding:9px 0"><div class="setting-info"><div class="setting-label">💬 Web Chat</div><div class="setting-hint">Embedded on your website</div></div><span class="badge b-green">Active</span></div>
+            <div class="setting-row" style="padding:9px 0"><div class="setting-info"><div class="setting-label">📱 WhatsApp</div><div class="setting-hint">Twilio integration</div></div><span class="badge b-amber">Setup</span></div>
+            <div class="setting-row" style="padding:9px 0"><div class="setting-info"><div class="setting-label">📞 Phone AI</div><div class="setting-hint">Voice booking capture</div></div><span class="badge b-blue">Pro</span></div>
+            <div class="setting-row" style="padding:9px 0;border-bottom:none"><div class="setting-info"><div class="setting-label">📧 Email</div><div class="setting-hint">Auto-reply & booking</div></div><span class="badge b-blue">Pro</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MISSED CALLS ─────────────────────────────────────── -->
+  <div class="view" id="view-missed">
+    <div class="mc-banner">
+      <div style="display:flex;align-items:center">
+        <div class="mc-icon">📞</div>
+        <div>
+          <div class="mc-title">Missed Call Recovery — AI Powered</div>
+          <div class="mc-sub">Every missed call becomes an automatic booking opportunity</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="pulse"></div>
+        <span style="font-size:12px;color:rgba(255,255,255,.5)">Monitoring active</span>
+        <button class="btn btn-gold btn-sm" onclick="simMissedCall()">Simulate Missed Call</button>
+      </div>
+    </div>
+
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="stat-lbl">Calls Missed</div><div class="stat-val" id="mc-total">{{ missed|length }}</div><div class="stat-sub">This week</div></div>
+      <div class="stat"><div class="stat-lbl">Recovered</div><div class="stat-val" id="mc-recovered">{{ missed|selectattr('status','equalto','recovered')|list|length }}</div><div class="stat-sub">↑ By AI follow-up</div></div>
+      <div class="stat"><div class="stat-lbl">Revenue Saved</div><div class="stat-val" id="mc-revenue">£{{ "{:,}".format(stats.missed_revenue) }}</div><div class="stat-sub" style="color:var(--green)">↑ £56 avg/booking</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-hd"><span class="card-title">Missed Call Log</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Time</th><th>Number</th><th>AI Action</th><th>Outcome</th><th>Status</th></tr></thead>
+          <tbody id="mc-tbody">
+            {% if missed %}
+              {% for m in missed %}
+              <tr id="mc-row-{{ m['id'] }}">
+                <td style="font-size:12px;color:var(--ink4)">{{ m['time'] }}</td>
+                <td style="font-weight:500">{{ m['phone'] }}</td>
+                <td style="font-size:12px;color:var(--ink4)">{{ m['action'] }}</td>
+                <td style="font-size:12px">{{ m['outcome'] }}</td>
+                <td><span class="badge {% if m['status']=='recovered' %}b-green{% else %}b-amber{% endif %}" style="font-size:11px">{{ m['status']|title }}</span></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr id="mc-empty"><td colspan="5" style="text-align:center;color:var(--ink4);padding:32px;font-size:13px">No missed calls yet. Click "Simulate Missed Call" to see the AI recovery flow.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ANALYTICS ─────────────────────────────────────────── -->
+  <div class="view" id="view-analytics">
+    <div class="section-hd"><span class="section-title">Analytics & Insights</span><span class="badge b-amber">Live data</span></div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-lbl">Conversion Rate</div><div class="stat-val">73%</div><div class="stat-sub">↑ 8% vs last month</div></div>
+      <div class="stat"><div class="stat-lbl">No-show Rate</div><div class="stat-val">4.2%</div><div class="stat-sub down">↓ Needs attention</div></div>
+      <div class="stat"><div class="stat-lbl">Avg Party Size</div><div class="stat-val">2.8</div><div class="stat-sub">↑ vs 2.4 prior</div></div>
+      <div class="stat"><div class="stat-lbl">AI Assisted</div><div class="stat-val" id="an-ai-pct">—</div><div class="stat-sub">↑ Of all bookings</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Booking Sources</span></div>
+        <div class="card-body" id="sources-chart">
+          <p style="font-size:13px;color:var(--ink4)">Loading...</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Peak Booking Hours</span></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:flex-end;gap:6px;height:90px">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--cream3);border-radius:3px 3px 0 0;height:20%"></div><span style="font-size:10px;color:var(--ink4)">12pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--cream3);border-radius:3px 3px 0 0;height:35%"></div><span style="font-size:10px;color:var(--ink4)">1pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--cream3);border-radius:3px 3px 0 0;height:15%"></div><span style="font-size:10px;color:var(--ink4)">3pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--gold-light);border-radius:3px 3px 0 0;height:70%"></div><span style="font-size:10px;color:var(--ink4)">6pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--gold);border-radius:3px 3px 0 0;height:100%"></div><span style="font-size:10px;color:var(--ink4)">7pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--gold-light);border-radius:3px 3px 0 0;height:88%"></div><span style="font-size:10px;color:var(--ink4)">8pm</span></div>
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:100%;background:var(--cream3);border-radius:3px 3px 0 0;height:55%"></div><span style="font-size:10px;color:var(--ink4)">9pm</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Revenue Tracker</span></div>
+        <div class="card-body">
+          <div style="font-size:30px;font-weight:700;color:var(--ink)" id="an-revenue">£{{ "{:,}".format(stats.estimated_revenue) }}</div>
+          <div style="font-size:12px;color:var(--green);margin-top:4px">↑ From tracked bookings</div>
+          <div style="margin-top:14px;font-size:12px;color:var(--ink4)">Based on £28 avg cover spend × total guest count</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><span class="card-title">Smart Insights</span></div>
+        <div class="card-body" style="padding:14px 16px">
+          <div class="insight" style="border-left:3px solid var(--gold)"><div class="insight-lbl" style="color:var(--gold-dim)">💡 AI Insight</div><div class="insight-text">Friday 7pm slots fill 3× faster — consider dynamic pricing for peak slots.</div></div>
+          <div class="insight" style="border-left:3px solid var(--green)"><div class="insight-lbl" style="color:var(--green)">📈 Growth</div><div class="insight-text">AI chat bookings up 40% after WhatsApp widget was added.</div></div>
+          <div class="insight" style="border-left:3px solid var(--red)"><div class="insight-lbl" style="color:var(--red)">⚠️ Alert</div><div class="insight-text">Saturday 8pm is near capacity — enable your waitlist feature.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SETTINGS ──────────────────────────────────────────── -->
+  <div class="view" id="view-settings">
+    <div class="section-hd"><span class="section-title">Settings</span></div>
+    <div style="max-width:640px">
+      <div class="settings-section">
+        <div class="settings-lbl">Restaurant Profile</div>
+        <div class="form-grid">
+          <div class="field"><label>Restaurant Name</label><input value="{{ restaurant }}"></div>
+          <div class="field"><label>Phone Number</label><input value="+44 20 7946 0958"></div>
+          <div class="field full"><label>Address</label><input value="42 Carnaby Street, London W1F 7DR"></div>
+          <div class="field"><label>Cuisine Type</label><select><option>British Modern</option><option>Italian</option><option>French</option><option>Japanese</option><option>Indian</option></select></div>
+          <div class="field"><label>Max Covers Per Service</label><input type="number" value="60"></div>
+        </div>
+        <button class="btn btn-gold" style="margin-top:16px" onclick="toast('Settings saved!')">Save Changes</button>
+      </div>
+      <div class="settings-section">
+        <div class="settings-lbl">AI & Automation</div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">Auto-confirm bookings</div><div class="setting-hint">AI confirms bookings without manual review</div></div><label class="toggle"><input type="checkbox" checked><span class="t-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">SMS reminders</div><div class="setting-hint">Send guests a reminder 2 hours before arrival</div></div><label class="toggle"><input type="checkbox" checked><span class="t-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">Missed call AI follow-up</div><div class="setting-hint">Auto-text callers who weren't answered</div></div><label class="toggle"><input type="checkbox" checked><span class="t-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">Waitlist management</div><div class="setting-hint">AI fills gaps from cancellations automatically</div></div><label class="toggle"><input type="checkbox"><span class="t-slider"></span></label></div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-lbl">Notifications</div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">New booking alerts</div><div class="setting-hint">Push notification for every new booking</div></div><label class="toggle"><input type="checkbox" checked><span class="t-slider"></span></label></div>
+        <div class="setting-row"><div class="setting-info"><div class="setting-label">Daily summary email</div><div class="setting-hint">Morning digest with the day's reservations</div></div><label class="toggle"><input type="checkbox" checked><span class="t-slider"></span></label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PRICING ────────────────────────────────────────────── -->
+  <div class="view" id="view-pricing">
+    <div class="section-hd"><span class="section-title">Plans & Pricing</span><span class="badge b-amber">14-day free trial on all plans</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;max-width:860px;margin-bottom:24px">
+      <div class="plan-card">
+        <div class="plan-name">STARTER</div>
+        <div class="plan-price">£49<span>/mo</span></div>
+        <div class="plan-desc">Perfect for independent restaurants</div>
+        <ul class="plan-features">
+          <li>Up to 200 bookings/month</li><li>AI Chat widget</li><li>Missed call capture</li><li>Dashboard & analytics</li><li>Email support</li>
+        </ul>
+        <button class="btn btn-outline" style="width:100%;margin-top:18px">Current Plan</button>
+      </div>
+      <div class="plan-card featured">
+        <div class="plan-popular">MOST POPULAR</div>
+        <div class="plan-name">PRO</div>
+        <div class="plan-price">£129<span>/mo</span></div>
+        <div class="plan-desc">For growing restaurants</div>
+        <ul class="plan-features">
+          <li>Unlimited bookings</li><li>WhatsApp + Phone AI</li><li>Email channel</li><li>SMS reminders</li><li>Guest CRM & history</li><li>Priority support</li>
+        </ul>
+        <button class="btn btn-gold" style="width:100%;margin-top:18px">Upgrade to Pro</button>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name">ENTERPRISE</div>
+        <div class="plan-price">£349<span>/mo</span></div>
+        <div class="plan-desc">For restaurant groups & chains</div>
+        <ul class="plan-features">
+          <li>Everything in Pro</li><li>Multi-location dashboard</li><li>Custom AI persona</li><li>API access</li><li>Dedicated success manager</li><li>White-label option</li>
+        </ul>
+        <button class="btn btn-outline" style="width:100%;margin-top:18px">Contact Sales</button>
+      </div>
+    </div>
+    <div style="padding:22px 24px;background:var(--white);border-radius:var(--r);border:1px solid var(--border2);max-width:860px">
+      <div style="font-size:14px;font-weight:600;margin-bottom:8px">💡 ROI Calculator</div>
+      <div style="font-size:13px;color:var(--ink3);line-height:1.7">If you miss just <strong>3 bookings/week</strong> at £56 avg spend, that's <strong>£8,736/year lost</strong>. TableFlow Pro at £129/mo = £1,548/year. <strong>You're 5.6× ROI positive from day one.</strong></div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+<div class="toast toast-green" id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────
+let chatHistory = [];
+let mcSimCount  = 0;
+const MC_PHONES = ["07700 900441","07911 822331","07800 192837","07922 441552","07745 300100"];
+
+// ── NAVIGATION ────────────────────────────────────────────────
+const VIEW_TITLES = {
+  dashboard:'Dashboard Overview',bookings:'All Bookings',aichat:'AI Booking Concierge',
+  missed:'Missed Call Recovery',analytics:'Analytics & Insights',settings:'Settings',pricing:'Plans & Pricing'
+};
+function nav(id, el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  if(el) el.classList.add('active');
+  document.getElementById('topbar-title').textContent = VIEW_TITLES[id]||'';
+  if(id==='analytics') loadAnalytics();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ── WEEKLY CHART ──────────────────────────────────────────────
+function drawChart(){
+  const vals=[18,24,19,31,42,67,1];
+  const max=Math.max(...vals);
+  document.getElementById('mini-chart').innerHTML=vals.map((v,i)=>
+    `<div class="bar${i===6?' today':''}" style="height:${Math.round(v/max*100)}%" title="${v} bookings"></div>`
+  ).join('');
+}
+drawChart();
+
+// ── BOOKINGS FORM ─────────────────────────────────────────────
+function openForm(){
+  const w=document.getElementById('add-form-wrap');
+  w.style.display='block';
+  const now=new Date(); now.setMinutes(0,0,0);
+  document.getElementById('f-time').value=now.toISOString().slice(0,16);
+  w.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function closeForm(){ document.getElementById('add-form-wrap').style.display='none'; }
+
+async function submitBooking(){
+  const name=document.getElementById('f-name').value.trim();
+  if(!name){toast('Please enter a guest name');return;}
+  const payload={
+    name, phone:document.getElementById('f-phone').value.trim()||'Unknown',
+    time:document.getElementById('f-time').value||'Tonight',
+    guests:document.getElementById('f-guests').value||2,
+    source:document.getElementById('f-source').value,
+    notes:document.getElementById('f-notes').value.trim()
+  };
+  try{
+    const res=await fetch('/api/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await res.json();
+    if(data.success){
+      closeForm();
+      toast('✓ Booking confirmed for '+name);
+      addTableRow(data.booking);
+      pushActivity('New booking: '+name,payload.guests+' covers · '+payload.source,'📅','var(--green-bg)');
+    }
+  }catch(e){ toast('Error saving booking'); }
+}
+
+function addTableRow(b){
+  const src_class={'AI Chat':'b-green','Missed Call':'b-red','Phone':'b-blue','Online':'b-blue','Walk-in':'b-amber','WhatsApp':'b-green','Email':'b-blue'};
+  const sc=src_class[b.source]||'b-blue';
+  const initials=(b.name||'??').substring(0,2).toUpperCase();
+  const tr=document.createElement('tr');
+  tr.className='fade-in';
+  tr.dataset.source=b.source; tr.dataset.status=b.status; tr.dataset.id=b.id;
+  tr.innerHTML=`
+    <td><div style="display:flex;align-items:center"><div class="g-avatar">${initials}</div><span style="font-weight:500">${b.name}</span></div></td>
+    <td style="font-size:12px;color:var(--ink4)">${b.phone}</td>
+    <td style="font-size:13px">${b.time}</td>
+    <td style="text-align:center">${b.guests}</td>
+    <td><span class="badge ${sc}" style="font-size:11px">${b.source}</span></td>
+    <td style="font-size:12px;color:var(--ink4)">${b.notes||'—'}</td>
+    <td><span class="badge b-green" style="font-size:11px">Confirmed</span></td>
+    <td><button class="btn btn-danger btn-sm" onclick="deleteBooking(${b.id},this)">Cancel</button></td>`;
+  const tbody=document.getElementById('bookings-tbody');
+  const empty=tbody.querySelector('td[colspan]');
+  if(empty) empty.closest('tr').remove();
+  tbody.prepend(tr);
+}
+
+// ── FILTER ────────────────────────────────────────────────────
+function filterChip(f,el){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('#bookings-tbody tr').forEach(row=>{
+    if(!row.dataset.id){row.style.display='';return;}
+    const show=f==='all'||row.dataset.source===f||row.dataset.status===f;
+    row.style.display=show?'':'none';
+  });
+}
+
+// ── DELETE BOOKING ────────────────────────────────────────────
+async function deleteBooking(id,btn){
+  if(!confirm('Cancel this booking?'))return;
+  btn.textContent='...'; btn.disabled=true;
+  try{
+    await fetch('/api/bookings/'+id,{method:'DELETE'});
+    btn.closest('tr').style.opacity='0';
+    btn.closest('tr').style.transition='opacity .3s';
+    setTimeout(()=>btn.closest('tr').remove(),300);
+    toast('Booking cancelled');
+  }catch(e){btn.textContent='Cancel';btn.disabled=false;}
+}
+
+// ── ACTIVITY FEED ─────────────────────────────────────────────
+function pushActivity(text,sub,icon,bg){
+  const feed=document.getElementById('activity-feed');
+  const now=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const div=document.createElement('div');
+  div.className='tl-item fade-in';
+  div.innerHTML=`<div class="tl-icon" style="background:${bg||'var(--cream3)'}">${icon}</div><div><div class="tl-text">${text}</div><div class="tl-sub">${sub}</div></div><div class="tl-time">${now}</div>`;
+  feed.prepend(div);
+  while(feed.children.length>8)feed.removeChild(feed.lastChild);
+}
+
+// ── MISSED CALL SIMULATION ────────────────────────────────────
+async function simMissedCall(){
+  const phone=MC_PHONES[mcSimCount++%MC_PHONES.length];
+  const now=new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  try{
+    const res=await fetch('/api/missed-call',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+    const data=await res.json();
+    if(!data.success)return;
+    const mcId=data.id;
+
+    // Update UI
+    document.getElementById('mc-total').textContent=parseInt(document.getElementById('mc-total').textContent)+1;
+    const empty=document.getElementById('mc-empty');
+    if(empty)empty.remove();
+    const tbody=document.getElementById('mc-tbody');
+    const tr=document.createElement('tr');
+    tr.id='mc-row-'+mcId; tr.className='fade-in';
+    tr.innerHTML=`<td style="font-size:12px;color:var(--ink4)">${now}</td><td style="font-weight:500">${phone}</td><td style="font-size:12px;color:var(--ink4)">${data.action}</td><td style="font-size:12px" id="mc-out-${mcId}">Awaiting reply...</td><td id="mc-st-${mcId}"><span class="badge b-amber" style="font-size:11px">Pending</span></td>`;
+    tbody.prepend(tr);
+    pushActivity('Missed call: '+phone,'AI follow-up SMS sent','📞','var(--red-bg)');
+    toast('📞 Missed call captured — AI SMS sent!');
+
+    // Simulate recovery after 3s
+    setTimeout(async()=>{
+      const recRes=await fetch('/api/missed-call/'+mcId+'/recover',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone})});
+      const recData=await recRes.json();
+      if(recData.success){
+        document.getElementById('mc-out-'+mcId).textContent=recData.outcome;
+        document.getElementById('mc-st-'+mcId).innerHTML='<span class="badge b-green" style="font-size:11px">Recovered</span>';
+        const rec=parseInt(document.getElementById('mc-recovered').textContent)+1;
+        document.getElementById('mc-recovered').textContent=rec;
+        document.getElementById('mc-revenue').textContent='£'+(rec*56).toLocaleString();
+        pushActivity('Missed call RECOVERED!','Booked 2 covers via AI SMS','✅','var(--green-bg)');
+        toast('✅ Booking recovered from missed call!');
+      }
+    },3000);
+  }catch(e){toast('Simulation error');}
+}
+
+// ── AI CHAT ───────────────────────────────────────────────────
+function appendMsg(text,role,typing=false){
+  const msgs=document.getElementById('chat-msgs');
+  const div=document.createElement('div');
+  div.className='msg '+role+(typing?' typing':'');
+  if(role==='ai'){const lbl=document.createElement('div');lbl.className='msg-lbl';lbl.textContent='TABLEFLOW AI';div.appendChild(lbl);}
+  if(typing){div.innerHTML+='<div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';}
+  else{const p=document.createElement('p');p.textContent=text;div.appendChild(p);}
+  msgs.appendChild(div); msgs.scrollTop=msgs.scrollHeight; return div;
+}
+
+function sendQuick(msg){document.getElementById('chat-input').value=msg;sendChat();}
+
+async function sendChat(){
+  const input=document.getElementById('chat-input');
+  const msg=input.value.trim(); if(!msg)return; input.value='';
+  appendMsg(msg,'user');
+  chatHistory.push({role:'user',content:msg});
+  const typing=appendMsg('','ai',true);
+  try{
+    const res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:chatHistory})});
+    const data=await res.json();
+    typing.remove();
+    const reply=data.reply||"I'm having trouble connecting. Please try again.";
+    appendMsg(reply,'ai');
+    chatHistory.push({role:'assistant',content:reply});
+    if(data.booking_created){
+      const b=data.booking_created;
+      const aiCount=document.getElementById('ai-count');
+      aiCount.textContent=parseInt(aiCount.textContent)+1;
+      pushActivity('AI booked: '+b.name,b.guests+' covers · '+b.time,'💬','var(--blue-bg)');
+      toast('✓ AI confirmed booking for '+b.name);
+    }
+  }catch(e){typing.remove();appendMsg("Connection error — please try again.",'ai');}
+}
+
+// ── ANALYTICS ─────────────────────────────────────────────────
+async function loadAnalytics(){
+  try{
+    const res=await fetch('/api/analytics');
+    const d=await res.json();
+    document.getElementById('an-revenue').textContent='£'+(d.estimated_revenue).toLocaleString();
+    const aiPct=d.total_bookings>0?Math.round(d.ai_bookings/d.total_bookings*100):0;
+    document.getElementById('an-ai-pct').textContent=aiPct+'%';
+    const src=d.source_breakdown; const total=d.total_bookings||1;
+    const srcHtml=Object.entries(src).sort((a,b)=>b[1]-a[1]).map(([k,v])=>{
+      const pct=Math.round(v/total*100);
+      return `<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px">${k}</span><span style="font-size:13px;font-weight:600">${pct}%</span></div><div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div></div>`;
+    }).join('')||'<p style="font-size:13px;color:var(--ink4)">No booking data yet.</p>';
+    document.getElementById('sources-chart').innerHTML=srcHtml;
+  }catch(e){console.error(e);}
+}
+</script>
+</body>
+</html>
