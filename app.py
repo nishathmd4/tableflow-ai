@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, jsonify
+from flask import Flask, render_template, request, jsonify
 import sqlite3
-from datetime import datetime
+import re
 
 app = Flask(__name__)
 
@@ -82,64 +82,121 @@ def chat_page():
     return render_template("chat.html", restaurant=RESTAURANT_NAME)
 
 
+def extract_booking_details(messages):
+    full_text = " ".join([m["content"].lower() for m in messages if m["role"] == "user"])
+
+    details = {
+        "name": None,
+        "phone": None,
+        "guests": None,
+        "time": None,
+        "notes": None,
+    }
+
+    # Guests
+    guest_match = re.search(r'(\d+)\s*(people|persons|guests|covers|table for)?', full_text)
+    if guest_match:
+        details["guests"] = int(guest_match.group(1))
+
+    if "me and my wife" in full_text or "me and my husband" in full_text or "two of us" in full_text:
+        details["guests"] = 2
+
+    # Time
+    time_match = re.search(r'(\d{1,2})(:\d{2})?\s?(am|pm)', full_text)
+    if time_match:
+        details["time"] = time_match.group(0)
+
+    if details["time"]:
+        if "tomorrow" in full_text:
+            details["time"] = "Tomorrow " + details["time"]
+        elif "tonight" in full_text:
+            details["time"] = "Tonight " + details["time"]
+        elif "friday" in full_text:
+            details["time"] = "Friday " + details["time"]
+        elif "saturday" in full_text:
+            details["time"] = "Saturday " + details["time"]
+        elif "sunday" in full_text:
+            details["time"] = "Sunday " + details["time"]
+
+    # Name
+    name_match = re.search(r'(under|name is|this is|for)\s+([a-zA-Z]+)', full_text)
+    if name_match:
+        details["name"] = name_match.group(2).capitalize()
+
+    # Phone
+    phone_match = re.search(r'(07\d{9}|\+44\s?7\d{9})', full_text)
+    if phone_match:
+        details["phone"] = phone_match.group(1)
+
+    # Allergies / notes
+    notes = []
+    allergy_words = ["allergy", "allergic", "gluten", "nuts", "nut", "peanut", "dairy", "halal", "vegan", "vegetarian", "birthday", "anniversary", "wheelchair"]
+    for word in allergy_words:
+        if word in full_text:
+            notes.append(word)
+
+    if notes:
+        details["notes"] = ", ".join(sorted(set(notes)))
+
+    return details
+
+
 @app.route("/api/chat", methods=["POST"])
 def ai_chat():
-    import re
-
     data = request.get_json()
     messages = data.get("messages", [])
 
     if not messages:
-        return jsonify({"reply": "Please type your booking request."})
+        return jsonify({"reply": "Of course — how many people is the table for?"})
 
-    message = messages[-1]["content"].lower()
+    latest_message = messages[-1]["content"].lower()
+    details = extract_booking_details(messages)
 
-    name = "Guest"
-    guests = 2
-    time = "Tonight"
-    phone = "Unknown"
+    booking_intent = any(word in latest_message for word in ["book", "table", "reserve", "reservation"])
 
-    # Guest count
-    g = re.search(r'(\d+)', message)
-    if g:
-        guests = int(g.group(1))
-
-    # Time
-    t = re.search(r'(\d{1,2})(:\d{2})?\s?(am|pm)', message)
-    if t:
-        time = t.group(0)
-
-    # Date words
-    if "tomorrow" in message:
-        time = "Tomorrow " + time
-    elif "tonight" in message:
-        time = "Tonight " + time
-
-    # Name
-    n = re.search(r'(under|name is|this is)\s+([a-zA-Z]+)', message)
-    if n:
-        name = n.group(2).capitalize()
-
-    if "book" in message or "table" in message:
-        conn = get_db()
-        conn.execute(
-            "INSERT INTO bookings (name, phone, guests, time, source, status) VALUES (?, ?, ?, ?, ?, ?)",
-            (name, phone, guests, time, "AI Chat", "confirmed")
-        )
-        conn.commit()
-        conn.close()
-
+    if not booking_intent and len(messages) <= 1:
         return jsonify({
-            "reply": f"Perfect, {name}. Your table for {guests} at {time} is confirmed. See you soon.",
-            "booking_created": {
-                "name": name,
-                "guests": guests,
-                "time": time
-            }
+            "reply": f"Welcome to {RESTAURANT_NAME}. I can help you book a table. How many people is the booking for?"
         })
 
+    if not details["guests"]:
+        return jsonify({
+            "reply": "Of course — how many people is the table for?"
+        })
+
+    if not details["time"]:
+        return jsonify({
+            "reply": f"Great. What date and time would you like to book for {details['guests']} people?"
+        })
+
+    if not details["name"]:
+        return jsonify({
+            "reply": "Perfect. What name should I put the booking under?"
+        })
+
+    if not details["notes"]:
+        return jsonify({
+            "reply": f"Thanks, {details['name']}. Any allergies, dietary requirements, or special requests?"
+        })
+
+    phone = details["phone"] or "Unknown"
+    notes = details["notes"] or "None"
+
+    conn = get_db()
+    conn.execute(
+        "INSERT INTO bookings (name, phone, guests, time, source, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (details["name"], phone, details["guests"], details["time"], "AI Chat", notes, "confirmed")
+    )
+    conn.commit()
+    conn.close()
+
     return jsonify({
-        "reply": "I can help you book a table. Tell me number of guests, time, and name."
+        "reply": f"Perfect, {details['name']}. Your table for {details['guests']} at {details['time']} is confirmed. We’ve noted: {notes}. See you soon.",
+        "booking_created": {
+            "name": details["name"],
+            "guests": details["guests"],
+            "time": details["time"]
+        }
     })
 
 
